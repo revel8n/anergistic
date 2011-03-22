@@ -372,7 +372,14 @@
 	rtw[0] = ctx->pc + 4;
 	ctx->pc += (i16 << 2) - 4;
 }
-
+001100010,ri16,brasl,signed
+{
+	int i;
+	for (i = 0; i < 4; ++i)
+		rtw[i] = 0;
+	rtw[0] = ctx->pc + 4;
+	ctx->pc = (i16 << 2) - 4;
+}
 00100101011,rr,bihnz,half
 {
 	if (rthp != 0)
@@ -507,10 +514,15 @@
 {
 	int i;
 	for (i = 0; i < 4; ++i)
-		rtw[i] = rbw[i] - raw[i] - (rtw[i] & 1);
+		rtw[i] = rbw[i] - raw[i] - ((rtw[i]&1)?0:1);
 }
 
 00001000010,rr,bg
+{
+	int i;
+	for (i = 0; i < 4; ++i)
+		rtw[i]=raw[i]>rbw[i]?0:1;
+}
 01101000011,rr,bgx
 {
 	int i;
@@ -796,6 +808,32 @@
 	{
 		if (i >= shift_count)
 			rtb[i] = rab[i - shift_count];
+		else
+			rtb[i] = 0;
+	}
+}
+00111001101,rr,rotqmbybi,byte
+{
+	int i;
+	int shift_count = (0-((rbb[3])>>3)) & 0x1f;
+
+	for (i = 0; i < 16; ++i)
+	{
+		if (i >= shift_count)
+			rtb[i] = rab[i - shift_count];
+		else
+			rtb[i] = 0;
+	}
+}
+00111001111,rr,shlqbybi,byte
+{
+	int i;
+	int shift_count = ((rbb[3])>>3) & 0x1f;
+
+	for (i = 0; i < 16; ++i)
+	{
+		if ((i + shift_count) < 16)
+			rtb[i] = rab[i + shift_count];
 		else
 			rtb[i] = 0;
 	}
@@ -1096,4 +1134,157 @@
 	for (i = 0; i < 4; ++i)
 		rtw[i] = -(((s32)raw[i]) > ((s32)i10));
 }
+01011000100,rr,fa,float
+{
+	int i;
+	for (i = 0; i < 4; ++i)
+		rtf[i] = raf[i] + rbf[i];
+}
+01011000101,rr,fs,float
+{
+	int i;
+	for (i = 0; i < 4; ++i)
+		rtf[i] = raf[i] - rbf[i];
+}
+01011000110,rr,fm,float
+{
+	int i;
+	for (i = 0; i < 4; ++i)
+		rtf[i] = raf[i] * rbf[i];
 
+}
+1110,rrr,fma,float
+{
+	int i;
+	for (i = 0; i < 4; ++i)
+		rtf[i] = rcf[i] + (raf[i] * rbf[i]);
+}
+1111,rrr,fms,float
+{
+	int i;
+	for (i = 0; i < 4; ++i)
+		rtf[i] = (raf[i] * rbf[i])-rcf[i];
+}
+1101,rrr,fnms,float
+{
+	int i;
+	for (i = 0; i < 4; ++i)
+		rtf[i] = rcf[i] - (raf[i] * rbf[i]);
+}
+01011000010,rr,fcgt,float
+{
+	int itrue = 0xffffffff;
+	float ftrue = *(float*)&itrue;
+	int i;
+	for (i = 0; i < 4; ++i)
+		rtf[i] = raf[i]>rbf[i]?ftrue:0.0;
+	
+}
+01111000010,rr,fceq,float
+{
+	//note: floats are not accurately modeled!
+	int i; 
+	int itrue = 0xffffffff;
+	float ftrue = *(float*)&itrue;
+	for (i = 0; i < 4; ++i)
+		rtf[i] = raf[i]==rbf[i]?ftrue:0.0;
+}
+00110111000,rr,frest,float
+{
+	int i;
+	// not quite right, but assume this is followed by a 'fi'
+	for (i = 0; i < 4; ++i)
+		rtf[i] = 1/raf[1];
+}
+00110111001,rr,frsqest,float
+{
+	int i;
+	// not quite right, but assume this is followed by a 'fi'
+	for (i = 0; i < 4; ++i)
+		rtf[i] = 1/sqrt(fabs(raf[i]));
+}
+01111010100,rr,fi,float
+{
+	int i;
+	// not quite right, but assume this was preceeded by a 'fr*est'
+	for (i = 0; i < 4; ++i)
+		rtf[i] = rbf[i];
+}
+01110111000,rr,fesd,float
+{
+	double result = raf[0];
+	float *tmp = (float*)&result;
+	rtf[0] = tmp[1];
+	rtf[1] = tmp[0];
+	result = raf[2];
+	rtf[2] = tmp[1];
+	rtf[3] = tmp[0];
+}
+01110111001,rr,frds,double
+{
+	double dtmp = rad[0];
+	float ftmp = dtmp;
+	float *ptmp = (float*)&dtmp;
+	ptmp[1] = ftmp;
+	ptmp[0] = 0.0;
+	rtd[0]=dtmp;
+
+	dtmp = rad[1]; 
+	ftmp = dtmp;
+	ptmp[0] = ftmp;
+	ptmp[1] = 0.0;
+	rtd[1] = dtmp;
+}
+
+0111011010,ri8,csflt,float
+{
+	int i;
+	for (i = 0; i < 4; ++i){
+		int val = raw[i];
+		// let's hope the x86s float HW does the right thing here...
+		rtf[i] = (float)val;
+	}
+}
+0111011000,ri8,cflts,float
+{
+	int i;
+	for (i = 0; i < 4; ++i)
+		rtw[i] = (int)raf[i];	
+}
+0111011001,ri8,cfltu,float
+{
+	int i;
+	for (i = 0; i < 4; ++i)
+		rtw[i] = (u32)raf[i];	
+}
+01011001110,rr,dfm,double
+{
+	rtd[0] = rad[0]*rbd[0];
+	rtd[1] = rad[1]*rbd[1];
+}
+01011001101,rr,dfs,double
+{
+	rtd[0] = rad[0]-rbd[0];
+	rtd[1] = rad[1]-rbd[1];
+}
+01011001100,rr,dfa,double
+{
+	rtd[0] = rad[0]+rbd[0];
+	rtd[1] = rad[1]+rbd[1];
+}	
+01101011101,rr,dfms,double
+{
+	rtd[0] = (rad[0]*rbd[0])-rtd[0];
+	rtd[1] = (rad[1]*rbd[1])-rtd[1];
+}
+01101011110,rr,dfnms,double
+{
+	// almost same as dfms. This is missing in SPU_ISA_1.2. See v.1.1
+	rtd[0] = (rad[0]*rbd[0])-rtd[0];
+	rtd[1] = (rad[1]*rbd[1])-rtd[1];
+}
+01101011100,rr,dfma,double
+{
+	rtd[0] = (rad[0]*rbd[0])+rtd[0];
+	rtd[1] = (rad[1]*rbd[1])+rtd[1];
+}

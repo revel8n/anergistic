@@ -67,6 +67,9 @@ void channel_wrch(int ch, int reg)
 	
 	switch (ch)
 	{
+	case 7: //write decrementer
+		break;
+		
 	case 16:
 		printf("MFC_LSA %08x\n", r);
 		MFC_LSA = r;
@@ -118,6 +121,8 @@ void channel_rdch(int ch, int reg)
 	r = 0;
 	switch (ch)
 	{
+	case 8: //read decrementer
+		break;
 	case 24:
 		r = MFC_TagStat;
 		printf("MFC_RdTagStat %08x\n", r);

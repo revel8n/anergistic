@@ -7,6 +7,7 @@
 #include "emulate.h"
 #include "main.h"
 #include "helper.h"
+#include <string.h>
 
 #ifndef DEBUG_INSTR_MEM
 #define vdbgprintf(...)
@@ -94,4 +95,28 @@ void Bits_to_reg(int r, const u1 *d)
 		for (j = 0; j < 32; ++j)
 			ctx->reg[r][i] |= *d++ << (31 - j);
 	}
+}
+void reg_to_float(float *d, int r)
+{
+	memcpy( d, ctx->reg[r], 16);
+}
+void float_to_reg(int r, const float *d)
+{
+	memcpy(ctx->reg[r], d, 16);
+}
+void reg_to_double(double *d, int r)
+{
+	u32* tmp = (u32*)d;
+	tmp[1] = ctx->reg[r][0];	
+	tmp[0] = ctx->reg[r][1];	
+	tmp[3] = ctx->reg[r][2];	
+	tmp[2] = ctx->reg[r][3];	
+}
+void double_to_reg(int r, const double *d)
+{
+	u32* tmp = (u32*)d;
+	ctx->reg[r][0] = tmp[1];	
+	ctx->reg[r][1] = tmp[0];	
+	ctx->reg[r][2] = tmp[3];	
+	ctx->reg[r][3] = tmp[2];	
 }

@@ -14,7 +14,7 @@ LIBS = -lws2_32
 else
 INCLUDE_PYTHON = /usr/include/python2.6/
 EXEC_GENERATE = ./instr-generate.py
-LIBS = 
+LIBS = -lm
 endif
 
 

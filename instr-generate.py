@@ -12,6 +12,7 @@ types = {
 		"rr": (11, "SPU_INSTR_RR", "u32 rt, u32 ra, u32 rb"),
 		"rrr": (4, "SPU_INSTR_RRR", "u32 rt, u32 ra, u32 rb, u32 rc"),
 		"ri7": (11, "SPU_INSTR_RI7", "u32 rt, u32 ra, u32 i7"),
+		"ri8": (10, "SPU_INSTR_RI8", "u32 rt, u32 ra, u32 i8"),
 		"ri10": (8, "SPU_INSTR_RI10", "u32 rt, u32 ra, u32 i10"),
 		"ri16": (9, "SPU_INSTR_RI16", "u32 rt, u32 i16"),
 		"ri18": (7, "SPU_INSTR_RI18", "u32 rt, u32 i18"),
@@ -122,11 +123,12 @@ for fnc in function_bodies:
 			for at, an in args:
 				if an[0] == "i":
 					pre_transform += "%s <<= %s;" % (an, attrib[5:])
-		elif attrib in ["byte", "half", "Bits"]:
+		elif attrib in ["byte", "half", "Bits", "float", "double"]:
 			for at, an in args:
 				if an[0] == "r":
-					bits = {"Bits": 1, "byte":8, "half":16}[attrib]
-					pre_transform += "u%d %s%s[%d]; reg_to_%s(%s%s, %s);" % (bits, an, attrib[0], 128/bits, attrib, an, attrib[0], an)
+					bits = {"Bits": 1, "byte":8, "half":16, "float":32, "double":64}[attrib]
+					vartype = {"Bits":"u1","byte":"u8","half":"u16","float":"float","double":"double"}[attrib]
+					pre_transform += "%s %s%s[%d]; reg_to_%s(%s%s, %s);" % (vartype, an, attrib[0], 128/bits, attrib, an, attrib[0], an)
 				if an == "rt":
 					post_transform += "%s_to_reg(%s, %s%s);" % (attrib, an, an, attrib[0])
 		elif attrib == "stop":

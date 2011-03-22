@@ -19,6 +19,10 @@ void reg_to_half(u16 *d, int r);
 void half_to_reg(int r, const u16 *d);
 void reg_to_Bits(u1 *d, int r);
 void Bits_to_reg(int r, const u1 *d);
+void reg_to_float(float *d, int r);
+void float_to_reg(int r, const float *d);
+void reg_to_double(double *d, int r);
+void double_to_reg(int r, const double *d);
 #define rtw ctx->reg[rt]
 #define raw ctx->reg[ra]
 #define rbw ctx->reg[rb]

@@ -44,6 +44,12 @@ static void decode_ri7(void)
 	ra = instr_bits(18, 24);
 	rt = instr_bits(25, 31);
 }
+static void decode_ri8(void)
+{
+	ix = instr_bits(10, 17);
+	ra = instr_bits(18, 24);
+	rt = instr_bits(25, 31);
+}
 
 static void decode_ri10(void)
 {
@@ -80,6 +86,10 @@ static int emulate_instr(void)
 		case SPU_INSTR_RI7:
 			decode_ri7();
 			return ((spu_instr_ri7_t)instr_tbl[op].ptr)(rt, ra, ix);
+			break;
+		case SPU_INSTR_RI8:
+			decode_ri8();
+			return ((spu_instr_ri8_t)instr_tbl[op].ptr)(rt, ra, ix);
 			break;
 		case SPU_INSTR_RI10:
 			decode_ri10();

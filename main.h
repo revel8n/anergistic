@@ -6,14 +6,24 @@
 #define MAIN_H__
 
 #include "types.h"
+#include "reg_t.h"
 
-struct ctx_t {
+#pragma pack(push, 1)
+
+struct ctx_t
+{
 	u8 *ls;
-	u32 reg[128][4];
+    union
+    {
+        reg_t regs[128];
+        u32 reg[128][4];
+    };
 	u32 pc;
 	u32 paused;
 	u32 trap;
 };
+
+#pragma pack(pop)
 
 // evil global variable ahead
 extern struct ctx_t *ctx;

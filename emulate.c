@@ -124,7 +124,8 @@ u32 emulate(void)
 	dbgprintf("%05x: %08x ", ctx->pc, instr);
 #endif
 
-	if (gdb_bp_x(ctx->pc)) {
+	if (gdb_bp_x(ctx->pc) && ctx->paused != 2)
+    {
 #ifdef DEBUG_GDB
 		printf("------------------------------------------ break %08x\n", ctx->pc);
 #endif
@@ -186,6 +187,12 @@ u32 emulate(void)
 
 	if ((ctx->pc & 3) != 0)
 		fail("pc is not aligned: %08x", ctx->pc);
+
+    if (ctx->paused == 2)
+    {
+        ctx->paused = 1;
+        gdb_signal(SIGTRAP);
+    }
 
 //	dbgprintf("\n\n", count);
 	return 0;

@@ -11,7 +11,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <fcntl.h>
-#include <unistd.h>
+//#include <unistd.h>
 #ifdef _WIN32
 #include <ws2tcpip.h>
 #include <iphlpapi.h>
@@ -32,7 +32,7 @@
 #endif
 
 #define		GDB_BFR_MAX	10000
-#define		GDB_MAX_BP	10
+#define		GDB_MAX_BP	100
 
 #define		GDB_STUB_START	'$'
 #define		GDB_STUB_END	'#'
@@ -103,10 +103,10 @@ static void hex2mem(u8 *dst, u8 *src, u32 len)
 
 static u8 gdb_read_byte(void)
 {
-	ssize_t res;
+	size_t res;
 	u8 c;
 
-	res = recv(sock, &c, 1, MSG_WAITALL);
+	res = recv(sock, (char*)&c, 1, MSG_WAITALL);
 	if (res != 1)
 		fail("recv failed");
 
@@ -131,11 +131,11 @@ static gdb_bp_t *gdb_bp_ptr(u32 type)
 		case GDB_BP_TYPE_X:
 			return bp_x;
 		case GDB_BP_TYPE_R:
-			return bp_x;
+			return bp_r;
 		case GDB_BP_TYPE_W:
-			return bp_x;
+			return bp_w;
 		case GDB_BP_TYPE_A:
-			return bp_x;
+			return bp_a;
 		default:
 			return NULL;
 	}
@@ -150,7 +150,8 @@ static gdb_bp_t *gdb_bp_empty_slot(u32 type)
 	if (p == NULL)
 		return NULL;
 
-	for (i = 0; i < GDB_MAX_BP; i++) {
+	for (i = 0; i < GDB_MAX_BP; i++)
+    {
 		if (p[i].active == 0)
 			return &p[i];
 	}
@@ -167,7 +168,8 @@ static gdb_bp_t *gdb_bp_find(u32 type, u32 addr, u32 len)
 	if (p == NULL)
 		return NULL;
 
-	for (i = 0; i < GDB_MAX_BP; i++) {
+	for (i = 0; i < GDB_MAX_BP; i++)
+    {
 		if (p[i].active == 1 &&
 		    p[i].addr == addr &&
 		    p[i].len == len)
@@ -181,12 +183,14 @@ static void gdb_bp_remove(u32 type, u32 addr, u32 len)
 {
 	gdb_bp_t *p;
 
-	do {
+	do
+    {
 		p = gdb_bp_find(type, addr, len);
-		if (p != NULL) {
-			dbgprintf("gdb: remvoed a breakpoint: %08x bytes at %08x\n", len, addr);
+		if (p != NULL)
+        {
+			dbgprintf("gdb: remvoed a breakpoint: %08x bytes at %08x - %d - %d\n", len, addr, sizeof p, sizeof *p);
 			p->active = 0;
-			memset(p, 0, sizeof p);
+			memset(p, 0, sizeof *p);
 		}
 	} while (p != NULL);
 }
@@ -200,7 +204,8 @@ static int gdb_bp_check(u32 addr, u32 type)
 	if (p == NULL)
 		return 0;
 
-	for (i = 0; i < GDB_MAX_BP; i++) {
+	for (i = 0; i < GDB_MAX_BP; i++)
+    {
 		if (p[i].active == 1 &&
 		    (addr >= p[i].addr && addr < p[i].addr + p[i].len))
 			return 1;
@@ -212,7 +217,7 @@ static int gdb_bp_check(u32 addr, u32 type)
 static void gdb_nak(void)
 {
 	const char nak = GDB_STUB_NAK;
-	ssize_t res;
+	size_t res;
 
 	res = send(sock, &nak, 1, 0);
 	if (res != 1)
@@ -222,7 +227,7 @@ static void gdb_nak(void)
 static void gdb_ack(void)
 {
 	const char ack = GDB_STUB_ACK;
-	ssize_t res;
+	size_t res;
 
 	res = send(sock, &ack, 1, 0);
 	if (res != 1)
@@ -238,12 +243,14 @@ static void gdb_read_command(void)
 	memset(cmd_bfr, 0, sizeof cmd_bfr);
 
 	c = gdb_read_byte();
-	if (c != GDB_STUB_START) {
+	if (c != GDB_STUB_START)
+    {
 		dbgprintf("gdb: read invalid byte %02x\n", c);
 		return;
 	}
 
-	while ((c = gdb_read_byte()) != GDB_STUB_END) {
+	while ((c = gdb_read_byte()) != GDB_STUB_END)
+    {
 		cmd_bfr[cmd_len++] = c;
 		if (cmd_len == sizeof cmd_bfr)
 			fail("gdb: cmd_bfr overflow\n");
@@ -254,7 +261,8 @@ static void gdb_read_command(void)
 
 	chk_calc = gdb_calc_chksum();
 
-	if (chk_calc != chk_read) {
+	if (chk_calc != chk_read)
+    {
 		printf("gdb: invalid checksum: calculated %02x and read %02x for $%s# (length: %d)\n", chk_calc, chk_read, cmd_bfr, cmd_len);
 		cmd_len = 0;
 	
@@ -264,7 +272,8 @@ static void gdb_read_command(void)
 	dbgprintf("gdb: read command %c with a length of %d: %s\n", cmd_bfr[0], cmd_len, cmd_bfr);
 }
 
-static int gdb_data_available(void) {
+static int gdb_data_available(void)
+{
 	struct timeval t;
 	fd_set _fds, *fds = &_fds;
 	
@@ -309,8 +318,9 @@ static void gdb_reply(const char *reply)
 
 	ptr = cmd_bfr;
 	left = cmd_len + 4;
-	while (left > 0) {
-		n = send(sock, ptr, left, 0);
+	while (left > 0)
+    {
+		n = send(sock, (const char*)ptr, left, 0);
 		if (n < 0)
 			fail("gdb: send failed");
 		left -= n;
@@ -354,7 +364,7 @@ static void wbe32hex(u8 *p, u32 v)
 
 static void gdb_read_registers(void)
 {
-	static u8 bfr[GDB_BFR_MAX - 4];
+    u8 bfr[GDB_BFR_MAX - 4] = {0};
 	u32 i;
 
 	gdb_ack();
@@ -399,32 +409,36 @@ static void gdb_write_registers(void)
 
 static void gdb_read_register(void)
 {
-	static u8 reply[32];
+    u8 reply[32] = {0};
 	u32 id;
 
-	memset(reply, 0, sizeof reply);
+	//memset(reply, 0, sizeof reply);
 	id = hex2char(cmd_bfr[1]) << 4;
 	id |= hex2char(cmd_bfr[2]);
 
 	gdb_ack();
-	switch (id) {
-		case 0 ... 127:
-			wbe32hex(reply +  0, ctx->reg[id][0]);
-			wbe32hex(reply +  8, ctx->reg[id][1]);
-			wbe32hex(reply + 16, ctx->reg[id][2]);
-			wbe32hex(reply + 24, ctx->reg[id][3]);
-			break;
-		case 128:
-			// SPU ID
-			wbe32hex(reply, SPU_ID);
-			break;
-		case 129:
-			// PC
-			wbe32hex(reply, ctx->pc);
-			break;
-		default:
-			wbe32hex(reply, 0);
-	}
+    if (id >= 0 && id <= 127)
+    {
+        wbe32hex(reply +  0, ctx->reg[id][0]);
+        wbe32hex(reply +  8, ctx->reg[id][1]);
+        wbe32hex(reply + 16, ctx->reg[id][2]);
+        wbe32hex(reply + 24, ctx->reg[id][3]);
+    }
+    else if (id == 128)
+    {
+        // SPU ID
+        wbe32hex(reply, SPU_ID);
+    }
+    else if (id == 129)
+    {
+        // PC
+        wbe32hex(reply, ctx->pc);
+    }
+    else
+    {
+        wbe32hex(reply, 0);
+    }
+
 	gdb_reply((char *)reply);
 }
 
@@ -461,7 +475,7 @@ static void gdb_write_register(void)
 
 static void gdb_read_mem(void)
 {
-	static u8 reply[GDB_BFR_MAX - 4];
+    u8 reply[GDB_BFR_MAX - 4] = {0};
 	u32 addr, len;
 	u32 i;
 
@@ -518,6 +532,26 @@ static void gdb_continue(void)
 	send_signal = 1;
 }
 
+static void gdb_step(void)
+{
+    gdb_ack();
+    if (ctx->paused == 1)
+    {
+        ctx->paused = 2;
+        send_signal = 1;
+    }
+}
+
+static void gdb_pause(void)
+{
+    gdb_ack();
+    if (ctx->paused == 0)
+    {
+        ctx->paused = 1;
+        send_signal = 1;
+    }
+}
+
 static void gdb_add_bp(void)
 {
 	gdb_bp_t *bp;
@@ -527,7 +561,8 @@ static void gdb_add_bp(void)
 	gdb_ack();
 
 	type = hex2char(cmd_bfr[1]);
-	switch (type) {
+	switch (type)
+    {
 		case 0:
 		case 1:
 			type = GDB_BP_TYPE_X;
@@ -572,7 +607,8 @@ static void gdb_remove_bp(void)
 	gdb_ack();
 
 	type = hex2char(cmd_bfr[1]);
-	switch (type) {
+	switch (type)
+    {
 		case 0:
 		case 1:
 			type = GDB_BP_TYPE_X;
@@ -610,7 +646,8 @@ static void gdb_parse_command(void)
 	if (cmd_len == 0)
 		return;
 
-	switch(cmd_bfr[0]) {
+	switch(cmd_bfr[0])
+    {
 		case 'q':
 			gdb_handle_query();
 			break;
@@ -645,6 +682,12 @@ static void gdb_parse_command(void)
 		case 'c':
 			gdb_continue();
 			break;
+        case 's':
+            gdb_step();
+            break;
+        case ' ':
+            gdb_pause();
+            break;
 		case 'z':
 			gdb_remove_bp();
 			break;
@@ -667,7 +710,7 @@ static void gdb_parse_command(void)
 void gdb_init(u32 port)
 {
 	int tmpsock;
-	socklen_t len;
+	socklen_t len = sizeof saddr_client;
 	int on;
 #ifdef _WIN32
 	WSAStartup(MAKEWORD(2,2), &InitData);
@@ -682,7 +725,7 @@ void gdb_init(u32 port)
 		fail("Failed to create gdb socket");
 
 	on = 1;
-	if (setsockopt(tmpsock, SOL_SOCKET, SO_REUSEADDR, &on, sizeof on) < 0)
+	if (setsockopt(tmpsock, SOL_SOCKET, SO_REUSEADDR, (const char*)&on, sizeof on) < 0)
 		fail("Failed to setsockopt");
 
 	memset(&saddr_server, 0, sizeof saddr_server);
@@ -700,7 +743,10 @@ void gdb_init(u32 port)
 	sock = accept(tmpsock, (struct sockaddr *)&saddr_client, &len);
 
 	if (sock < 0)
-		fail("Failed to accept gdb client");
+    {
+        wprintf(L"accept failed with error: %ld\n", WSAGetLastError());
+        fail("Failed to accept gdb client");
+    }
 	printf("Client connected.\n");
 
 	saddr_client.sin_addr.s_addr = ntohl(saddr_client.sin_addr.s_addr);
@@ -710,7 +756,7 @@ void gdb_init(u32 port)
 	    ((saddr_client.sin_addr.s_addr >>  0) & 0xff) !=   1)
 		fail("gdb: incoming connection not from localhost");
 	*/
-	close(tmpsock);
+	closesocket(tmpsock);
 }
 
 
@@ -719,7 +765,7 @@ void gdb_deinit(void)
 	if (sock == -1)
 		return;
 
-	close(sock);
+	closesocket(sock);
 	sock = -1;
 #ifdef _WIN32
 	WSACleanup();
@@ -783,5 +829,3 @@ int gdb_bp_a(u32 addr)
 
 	return gdb_bp_check(addr, GDB_BP_TYPE_A);
 }
-
-

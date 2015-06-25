@@ -6,7 +6,7 @@
 #include <string.h>
 #include <stdarg.h>
 #include <stdlib.h>
-#include <unistd.h>
+//#include <unistd.h>
 
 #include "types.h"
 #include "main.h"
@@ -15,6 +15,7 @@
 
 static u32 MFC_LSA, MFC_EAH, MFC_EAL, MFC_Size, MFC_TagID, MFC_TagMask, MFC_TagStat;
 
+#define MFC_PUT_CMD 0x20
 #define MFC_GET_CMD 0x40
 #define MFC_SNDSIG_CMD 0xA0
 
@@ -27,6 +28,8 @@ void handle_mfc_command(u32 cmd)
 	{
 	case MFC_GET_CMD:
 		printf("MFC_GET (DMA into LS)\n");
+        memcpy(ctx->ls + MFC_LSA, (void*)MFC_EAL, MFC_Size);
+
 #if 0
 		{
 			FILE *f = fopen("dma", "rb");
@@ -42,6 +45,24 @@ void handle_mfc_command(u32 cmd)
 		}
 #endif
 		break;
+    case MFC_PUT_CMD:
+        printf("MFC_GET (DMA into LS)\n");
+        memcpy((void*)MFC_EAL, ctx->ls + MFC_LSA, MFC_Size);
+#if 0
+        {
+            FILE *f = fopen("dma", "rb");
+            if (!f)
+                exit(1);
+            fseek(f, MFC_EAL, SEEK_SET);
+            if (fread(ctx->ls + MFC_LSA, 1, MFC_Size, f) != MFC_Size)
+            {
+                printf("read error\n");
+                exit(1);
+            }
+            fclose(f);
+        }
+#endif
+        break;
 	default:
 		printf("unknown command\n");
 	}

@@ -7,7 +7,7 @@
 
 #define DEBUG
 //#define DEBUG_INSTR
-//#define DEBUG_GDB
+#define DEBUG_GDB
 
 //#define DEBUG_INSTR_MEM
 #define DEBUG_TRACE

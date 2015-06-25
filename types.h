@@ -15,6 +15,9 @@ typedef signed int s32;
 typedef signed short s16;
 typedef signed char s8;
 
+typedef float f32;
+typedef double f64;
+
 static inline u8 be8(u8 *p)
 {
 	return *p;
@@ -68,9 +71,8 @@ static inline void wbe32(u8 *p, u32 v)
 
 static inline void wbe64(u8 *p, u64 v)
 {
+    wbe32(p, v >> 32);
 	wbe32(p + 4, v);
-	v >>= 32;
-	wbe32(p, v);
 }
 
 

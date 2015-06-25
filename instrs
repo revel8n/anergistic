@@ -505,7 +505,7 @@
 	int i;
 	for (i = 0; i < 4; ++i)
 	{
-		u64 r = raw[i] + (rtw[i]&1) + rbw[i];
+		u64 r = (u64)(rtw[i] & 1) + (u64)raw[i] + (u64)rbw[i];
 		rtw[i] = (r >> 32) & 1;
 	}
 }
@@ -683,7 +683,7 @@
 {
 	int i;
 	for (i = 0; i < 8; ++i)
-		rth[i] &= i10;
+		rth[i] = rah[i] & i10;
 }
 
 00010100,ri10,andi,signed

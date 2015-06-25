@@ -7,6 +7,65 @@
 
 #include "types.h"
 
+inline u32 reg_bit(u32 r, u32 i)
+{
+    i %= 128;
+
+    return (ctx->regs[r]._u32[(i / 32)] >> (31 - (i & 0x1F))) & 1;
+}
+
+inline u8 reg_u8(u32 r, u32 i)
+{
+    i %= 16;
+
+    return ctx->regs[r]._u8[(i & ~3) + (3 - (i & 3))];
+}
+inline s8 reg_s8(u32 r, u32 i)
+{
+    i %= 16;
+
+    return ctx->regs[r]._s8[(i & ~3) + (3 - (i & 3))];
+}
+
+inline u16 reg_u16(u32 r, u32 i)
+{
+    i %= 8;
+
+    return ctx->regs[r]._u16[(i & ~1) + (2 - (i & 1))];
+}
+inline s16 reg_s16(u32 r, u32 i)
+{
+    i %= 8;
+
+    return ctx->regs[r]._s16[(i & ~1) + (2 - (i & 1))];
+}
+
+inline u32 reg_u32(u32 r, u32 i)
+{
+    i %= 4;
+
+    return ctx->regs[r]._u32[i];
+}
+inline s32 reg_s32(u32 r, u32 i)
+{
+    i %= 4;
+
+    return ctx->regs[r]._s32[i];
+}
+
+inline u64 reg_u64(u32 r, u32 i)
+{
+    i %= 2;
+
+    return ((ctx->regs[r]._u64[i] & 0xFFFFFFFF) << 32) | ((ctx->regs[r]._u64[i] >> 32) & 0xFFFFFFFF);
+}
+inline s64 reg_s64(u32 r, u32 i)
+{
+    i %= 2;
+
+    return ((ctx->regs[r]._s64[i] & 0xFFFFFFFF) << 32) | ((ctx->regs[r]._s64[i] >> 32) & 0xFFFFFFFF);
+}
+
 void reg2ls(u32 r, u32 addr);
 void ls2reg(u32 r, u32 addr);
 void get_mask_byte(u32 rt, u32 t);
